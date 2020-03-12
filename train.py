@@ -4,18 +4,26 @@ from torch.utils.data import DataLoader
 import torch.optim as optim
 import torch.nn as nn
 from torchvision import transforms
+import torch
+import matplotlib.pyplot as plt
+import time
 
-LEARNING_RATE = 0.001
+LEARNING_RATE = 0.0005
 EPOCH_NUM = 10
-BATCH_SIZE = 16
+BATCH_SIZE = 8
 NUM_WORKERS = 4
 USE_GPU = True
+USE_PRE_TRAIN = True
 
 if __name__ == '__main__':
-    if USE_GPU:
-        net = model.FCN(35).cuda()  # 35 classes for Cityscape Dataset
+
+    if USE_PRE_TRAIN:
+        net = torch.load('model.pkl')
     else:
-        net = model.FCN(35)
+        net = model.FCN(35)  # 35 classes for Cityscape Dataset
+
+    if USE_GPU:
+        net = net.cuda()
 
     optimizer = optim.Adam(net.parameters(), lr=LEARNING_RATE)
     criterion = nn.CrossEntropyLoss()
@@ -31,10 +39,15 @@ if __name__ == '__main__':
     dataloaders = DataLoader(transformed_data, batch_size=BATCH_SIZE,
                              shuffle=True, num_workers=NUM_WORKERS)
 
+    loss_plt = []
+    epoch_plt = []
+    plt.ion()
+    start_time = time.time()
     for i in range(EPOCH_NUM):
-        # forward
+        # forward pass
         running_loss = 0.0
-        # 迭代数据.
+
+        # iterate the data
         for batches in dataloaders:
             if USE_GPU:
                 inputs = batches['image'].cuda()
@@ -43,7 +56,7 @@ if __name__ == '__main__':
                 inputs = batches['image']
                 labels = batches['label'].squeeze()
 
-            # 零参数梯度
+            # zero the gradient
             optimizer.zero_grad()
 
             outputs = net(inputs)
@@ -51,10 +64,22 @@ if __name__ == '__main__':
             loss.backward()
             optimizer.step()
 
-            # 统计
+            # get the loss of each epoch
             running_loss += loss.item() * inputs.size(0)
 
-        epoch_loss = running_loss
-        print('Loss: {:.4f}'.format(epoch_loss))
+        # visualize the process
+        loss_plt.append(running_loss)
+        epoch_plt.append(i)
+        plt.cla()
+        plt.plot(epoch_plt, loss_plt, 'r-', lw=5)
+        plt.text(i/2, loss_plt[0], 'Loss=%.4f' % running_loss,
+                 fontdict={'size': 20, 'color': 'red'})
+        plt.pause(0.1)
+        print('Loss: {:.4f}'.format(running_loss))
 
-    net.save('model.pkl')
+    end_time = time.time()
+
+    plt.ioff()
+    plt.show()
+    torch.save(net, 'model.pkl')
+    print('Training time: {:.4f}'.format(end_time-start_time))

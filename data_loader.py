@@ -75,8 +75,8 @@ class CityScape(object):
             root_x = os.path.join(PATH_X, 'train')
             root_y = os.path.join(PATH_Y, 'train')
         else:
-            root_x = os.path.join(PATH_X, 'test')
-            root_y = os.path.join(PATH_Y, 'test')
+            root_x = os.path.join(PATH_X, 'val')
+            root_y = os.path.join(PATH_Y, 'val')
 
         city = os.listdir(root_x)
         root_file_x = []
@@ -121,7 +121,7 @@ class CityScape(object):
 dummy test
 '''
 if __name__ == '__main__':
-    a = CityScape(train=True, all=False)
+    a = CityScape(train=False, all=False)
     print(len(a))
     print(type(a[0]))
     print(a[0])

@@ -37,7 +37,7 @@ def bilinear_kernel_init(conv_layer):
 class FCN(nn.Module):
     def __init__(self, class_num):
         super(FCN, self).__init__()
-        resNet = torchvision.models.resnet101(pretrained=True)
+        resNet = torchvision.models.resnet34(pretrained=True)
         self.layer123 = nn.Sequential(*list(resNet.children())[:-4])
         self.layer4 = nn.Sequential(*list(resNet.children())[-4])
         self.layer5 = nn.Sequential(*list(resNet.children())[-3])
