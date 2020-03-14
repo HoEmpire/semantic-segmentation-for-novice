@@ -8,12 +8,12 @@ import torch
 import matplotlib.pyplot as plt
 import time
 
-LEARNING_RATE = 0.0005
+LEARNING_RATE = 0.001
 EPOCH_NUM = 10
 BATCH_SIZE = 8
 NUM_WORKERS = 4
 USE_GPU = True
-USE_PRE_TRAIN = True
+USE_PRE_TRAIN = False
 
 if __name__ == '__main__':
 
