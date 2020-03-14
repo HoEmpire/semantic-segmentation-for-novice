@@ -28,7 +28,7 @@ if __name__ == '__main__':
     optimizer = optim.Adam(net.parameters(), lr=LEARNING_RATE)
     criterion = nn.CrossEntropyLoss()
 
-    raw_data = data_loader.CityScape(all=False)
+    raw_data = data_loader.CityScape()
     transformed_data = []
     composed = transforms.Compose([data_loader.Rescale(256),
                                    data_loader.RandomCrop(224),

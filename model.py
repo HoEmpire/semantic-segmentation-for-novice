@@ -38,6 +38,7 @@ class FCN(nn.Module):
     def __init__(self, class_num):
         super(FCN, self).__init__()
         resNet = torchvision.models.resnet34(pretrained=True)
+        self.conv0 = nn.Conv2d
         self.layer123 = nn.Sequential(*list(resNet.children())[:-4])
         self.layer4 = nn.Sequential(*list(resNet.children())[-4])
         self.layer5 = nn.Sequential(*list(resNet.children())[-3])

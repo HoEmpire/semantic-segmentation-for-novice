@@ -4,6 +4,7 @@ from PIL import Image
 from torchvision import transforms
 import numpy as np
 import torch
+import random
 
 # PATH of your dataset
 PATH_X = './data/leftImg8bit_trainvaltest/leftImg8bit'
@@ -12,11 +13,10 @@ PATH_Y = './data/gtFine_trainvaltest/gtFine'
 
 class Rescale(object):
     """
-    将样本中的图片和label重新缩放到给定大小
+    rescale the size of the image
     """
 
     def __init__(self, output_size):
-        assert isinstance(output_size, (int))
         self.output_size = output_size
 
     def __call__(self, sample):
@@ -31,7 +31,7 @@ class Rescale(object):
 
 class RandomCrop(object):
     """
-    随机裁剪样本中的图像.    
+    crop the image randomly
     """
 
     def __init__(self, output_size):
@@ -59,17 +59,18 @@ class RandomCrop(object):
 
 class ToTensor(object):
     """
-    将样本中的ndarrays转换为Tensors.
+    change type from ndarray to tensor
     """
 
     def __call__(self, sample):
         return {'image': transforms.ToTensor()(sample['image']),
                 'label': (transforms.ToTensor()(sample['label'])*255).long()}
+        # change range from [0,1] to [0, 255]
 
 
 class CityScape(object):
 
-    def __init__(self, train=True, all=True):
+    def __init__(self, train=True, rand=-1):
 
         if train:
             root_x = os.path.join(PATH_X, 'train')
@@ -79,61 +80,74 @@ class CityScape(object):
             root_y = os.path.join(PATH_Y, 'val')
 
         city = os.listdir(root_x)
+        city_file_x = []
+        city_file_y = []
+
+        for c in city:
+            file_name_x = os.listdir(os.path.join(root_x, c))
+            all_file_y = os.listdir(os.path.join(root_y, c))
+            file_name_y = []
+
+            for i in range(len(file_name_x)):
+                file_name_x[i] = os.path.join(root_x, c, file_name_x[i])
+
+            for a in all_file_y:
+                if a.endswith('_labelIds.png'):
+                    file_name_y.append(os.path.join(root_y, c, a))
+
+            city_file_x.append(file_name_x)
+            city_file_y.append(file_name_y)
+
         root_file_x = []
         root_file_y = []
 
-        if all:
-            for c in city:
-                root_file_x.append(os.path.join(root_x, c))
-                root_file_y.append(os.path.join(root_y, c))
+        if rand == -1:
+            for i in range(len(city)):
+                for (x, y) in zip(city_file_x[i], city_file_y[i]):
+                    root_file_x.append(x)
+                    root_file_y.append(y)
         else:
-            root_file_x.append(os.path.join(root_x, city[0]))
-            root_file_y.append(os.path.join(root_y, city[0]))
+            for i in range(len(city)):
+                for (x, y) in zip(city_file_x[i], city_file_y[i]):
+                    if(random.random() < rand):
+                        root_file_x.append(x)
+                        root_file_y.append(y)
 
-        self.x = []
-        self.y = []
-
+        if train:
+            composed = transforms.Compose([Rescale(256),
+                                           RandomCrop((224, 448)),
+                                           ToTensor()])
+        else:
+            composed = transforms.Compose([Rescale((224, 448)),
+                                           ToTensor()])
+        self.data = []
+        sample = {}
         for r_x, r_y in zip(root_file_x, root_file_y):
-
-            for f in os.listdir(r_x):
-                self.x.append(Image.open(os.path.join(r_x, f)))
-
-            all_file_name_y = os.listdir(r_y)
-            file_name_y = []
-            for f in all_file_name_y:
-                if f[-8] == 'l':
-                    file_name_y.append(f)
-
-            for f in file_name_y:
-                self.y.append(Image.open(os.path.join(r_y, f)))
+            sample['image'] = Image.open(r_x)
+            sample['label'] = Image.open(r_y)
+            self.data.append(composed(sample))
 
     def __len__(self):
-        return len(self.x)
+        return len(self.data)
 
     def __getitem__(self, id):
-        target = {}
-        target['image'] = self.x[id]
-        target['label'] = self.y[id]
-        return target
+        return self.data[id]
 
 
 '''
 dummy test
 '''
 if __name__ == '__main__':
-    a = CityScape(train=False, all=False)
+    a = CityScape(train=True, rand=0.005)
     print(len(a))
     print(type(a[0]))
     print(a[0])
-    composed = transforms.Compose([Rescale(256),
-                                   RandomCrop(224),
-                                   ToTensor()])
-    b = []
-    for aa in a:
-        b.append(composed(aa))
-        aa = b[-1]
 
-    print(type(b[0]['label']))
     print(type(a[0]['label']))
 
-    print(np.unique(b[0]['label'].numpy()))
+    print(np.unique(a[0]['label'].numpy()))
+    plt.figure(0)
+    plt.imshow(a[0]['image'].numpy().transpose(1, 2, 0))
+    plt.figure(1)
+    plt.imshow(a[0]['label'].numpy().transpose(1, 2, 0).squeeze())
+    plt.show()
