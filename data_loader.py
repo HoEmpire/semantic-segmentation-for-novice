@@ -64,7 +64,7 @@ class ToTensor(object):
 
     def __call__(self, sample):
         return {'image': transforms.ToTensor()(sample['image']),
-                'label': (transforms.ToTensor()(sample['label'])*255).long()}
+                'label': (transforms.ToTensor()(sample['label'])*255).long().squeeze()}
         # change range from [0,1] to [0, 255]
 
 
@@ -141,13 +141,12 @@ if __name__ == '__main__':
     a = CityScape(train=True, rand=0.005)
     print(len(a))
     print(type(a[0]))
-    print(a[0])
-
     print(type(a[0]['label']))
+    print(a[0]['label'].shape)
 
     print(np.unique(a[0]['label'].numpy()))
     plt.figure(0)
     plt.imshow(a[0]['image'].numpy().transpose(1, 2, 0))
     plt.figure(1)
-    plt.imshow(a[0]['label'].numpy().transpose(1, 2, 0).squeeze())
+    plt.imshow(a[0]['label'].numpy())
     plt.show()

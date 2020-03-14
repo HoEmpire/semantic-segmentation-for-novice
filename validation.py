@@ -41,13 +41,7 @@ def label_accuracy_score(label_trues, label_preds, n_class):
 
 if __name__ == '__main__':
 
-    raw_data = data_loader.CityScape(train=False, all=False)
-    transformed_data = []
-    composed = transforms.Compose([data_loader.Rescale(256),
-                                   data_loader.RandomCrop(224),
-                                   data_loader.ToTensor()])
-    for d in raw_data:
-        transformed_data.append(composed(d))
+    transformed_data = data_loader.CityScape(train=False, rand=0.1)
 
     dataloaders = DataLoader(transformed_data, batch_size=BATCH_SIZE,
                              shuffle=True, num_workers=NUM_WORKERS)
@@ -70,13 +64,14 @@ if __name__ == '__main__':
 
             result = preds.unsqueeze(1).cpu()
             gt = labels
-                             
+
             for i in range(BATCH_SIZE):
 
-                acc, acc_cls, mean_iu, fwavacc = label_accuracy_score(gt[i].numpy(), result[i].numpy(), 35)
-                print('accuracy:{:.4f}, mean_iu:{:.4f}'.format(acc,mean_iu))
-                
-                grid = torch.Tensor(2, 1, 224, 224)
+                # acc, acc_cls, mean_iu, fwavacc = label_accuracy_score(
+                #     gt[i].numpy(), result[i].numpy(), 35)
+                # print('accuracy:{:.4f}, mean_iu:{:.4f}'.format(acc, mean_iu))
+
+                grid = torch.Tensor(2, 1, 224, 448)
                 grid[0] = result[i]
                 grid[1] = gt[i]
                 grid = utils.make_grid(grid).numpy().transpose((1, 2, 0))

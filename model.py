@@ -3,7 +3,7 @@ import torchvision
 import torch.functional as F
 import torch
 import numpy as np
-import time 
+import time
 
 BIAS_INIT = 0.01
 
@@ -21,7 +21,7 @@ def bilinear_kernel_init(conv_layer):
         center_row = factor - 1
     else:
         center_row = factor - 0.5
-    
+
     factor = (kernel_size[1] + 1) // 2
     if kernel_size[1] % 2 == 1:
         center_col = factor - 1
@@ -46,8 +46,10 @@ class FCN(nn.Module):
     def __init__(self, class_num):
         super(FCN, self).__init__()
         resNet = torchvision.models.resnet34(pretrained=True)
-        self.conv0 = nn.Conv2d(3, 3, 5, stride=(1, 2), padding=(2, 2)) # resize the image from 224*448
-                                                                       # to 224*224
+        # resize the image from 224*448 to 224*224
+        self.conv0 = nn.Conv2d(3, 3, 5, stride=(1, 2), padding=(2, 2))
+        self.conv0 = bilinear_kernel_init(self.conv0)
+
         self.layer123 = nn.Sequential(*list(resNet.children())[:-4])
         self.layer4 = nn.Sequential(*list(resNet.children())[-4])
         self.layer5 = nn.Sequential(*list(resNet.children())[-3])
@@ -60,7 +62,8 @@ class FCN(nn.Module):
         self.upsample_2x = nn.ConvTranspose2d(class_num, class_num, 4, 2, 1)
         self.upsample_4x = nn.ConvTranspose2d(class_num, class_num, 4, 2, 1)
         self.upsample_8x = nn.ConvTranspose2d(class_num, class_num, 8, 8, 0)
-        self.resize = nn.ConvTranspose2d(class_num, class_num, 5, (1,2), (2,2), (0,1))
+        self.resize = nn.ConvTranspose2d(
+            class_num, class_num, 5, (1, 2), (2, 2), (0, 1))
 
         self.upsample_2x = bilinear_kernel_init(self.upsample_2x)
         self.upsample_4x = bilinear_kernel_init(self.upsample_4x)
@@ -94,14 +97,14 @@ if __name__ == '__main__':
     start = time.time()
     output = model(input)
     end = time.time()
-    print('forward pass time:{:.4f}',end-start)
+    print('forward pass time:{:.4f}', end-start)
     # print(ouput)
     # print(ouput.shape)
     target = torch.zeros(1, 224, 448, dtype=int)
     _, preds = torch.max(output, 1)
 
     loss_fun = nn.CrossEntropyLoss()
-    # print(out)
-    # print(target)
+    print(output.shape)
+    print(target.shape)
     loss = loss_fun(output, target)
     print(loss)
