@@ -69,6 +69,12 @@ class ToTensor(object):
 
 
 class CityScape(object):
+    """
+            arg:
+            train: load training data or not, if not load validation data
+            rand: define the proportion of the loaded data, range from 0~1, default
+                  is -1 as loading all the data
+    """
 
     def __init__(self, train=True, rand=-1):
 

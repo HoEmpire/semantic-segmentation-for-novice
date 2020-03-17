@@ -93,14 +93,14 @@ dummpy test
 '''
 if __name__ == '__main__':
     model = FCN(20)
-    input = torch.rand(1, 3, 224, 448)
+    input = torch.rand(1, 3, 224, 1024)
     start = time.time()
     output = model(input)
     end = time.time()
     print('forward pass time:{:.4f}', end-start)
     # print(ouput)
     # print(ouput.shape)
-    target = torch.zeros(1, 224, 448, dtype=int)
+    target = torch.zeros(1, 224, 1024, dtype=int)
     _, preds = torch.max(output, 1)
 
     loss_fun = nn.CrossEntropyLoss()
