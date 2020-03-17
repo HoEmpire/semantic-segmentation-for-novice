@@ -130,4 +130,4 @@ dmypy.json
 
 data
 bak
-model
+model.pkl

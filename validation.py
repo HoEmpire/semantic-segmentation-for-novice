@@ -4,6 +4,7 @@ from torchvision import transforms, utils
 from torch.utils.data import DataLoader
 import matplotlib.pyplot as plt
 import numpy as np
+import metric
 
 BATCH_SIZE = 8
 NUM_WORKERS = 0
@@ -11,37 +12,9 @@ NUM_VAL = 3
 USE_GPU = True
 
 
-def _fast_hist(label_true, label_pred, n_class):
-    mask = (label_true >= 0) & (label_true < n_class)
-    hist = np.bincount(
-        n_class * label_true[mask].astype(int) +
-        label_pred[mask], minlength=n_class ** 2).reshape(n_class, n_class)
-    return hist
-
-
-def label_accuracy_score(label_trues, label_preds, n_class):
-    """Returns accuracy score evaluation result.
-      - overall accuracy
-      - mean accuracy
-      - mean IU
-      - fwavacc
-    """
-    hist = np.zeros((n_class, n_class))
-    for lt, lp in zip(label_trues, label_preds):
-        hist += _fast_hist(lt.flatten(), lp.flatten(), n_class)
-    acc = np.diag(hist).sum() / hist.sum()
-    acc_cls = np.diag(hist) / hist.sum(axis=1)
-    acc_cls = np.nanmean(acc_cls)
-    iu = np.diag(hist) / (hist.sum(axis=1) + hist.sum(axis=0) - np.diag(hist))
-    mean_iu = np.nanmean(iu)
-    freq = hist.sum(axis=1) / hist.sum()
-    fwavacc = (freq[freq > 0] * iu[freq > 0]).sum()
-    return acc, acc_cls, mean_iu, fwavacc
-
-
 if __name__ == '__main__':
 
-    transformed_data = data_loader.CityScape(train=False, rand=0.1)
+    transformed_data = data_loader.CityScape(train=False, rand=0.02)
 
     dataloaders = DataLoader(transformed_data, batch_size=BATCH_SIZE,
                              shuffle=True, num_workers=NUM_WORKERS)
@@ -62,15 +35,20 @@ if __name__ == '__main__':
             outputs = model(inputs)
             _, preds = torch.max(outputs, 1)
 
-            result = preds.unsqueeze(1).cpu()
+            result = preds.cpu()
             gt = labels
 
             for i in range(BATCH_SIZE):
 
-                # acc, acc_cls, mean_iu, fwavacc = label_accuracy_score(
-                #     gt[i].numpy(), result[i].numpy(), 35)
-                # print('accuracy:{:.4f}, mean_iu:{:.4f}'.format(acc, mean_iu))
-
+                mean_acc, acc_cls, mean_acc_cls, iou_cls, mean_iou, fwiou = metric.evaluation_result(
+                    gt[i].numpy(), result[i].numpy(), 35)
+                print('\n*****overall result*****')
+                print('mean_accuracy:{:.4f}, mean_iou:{:.4f}, frquency_weighted_iou:{:.4f}'.format(
+                    mean_acc, mean_iou, fwiou))
+                print('\n*****class result*****')
+                for c, m1, m2 in zip(metric.class_name, acc_cls, iou_cls):
+                    print('class:{:18s} | accuracy:{:.3f} | iou:{:.3f}'.format(
+                        c, m1, m2))
                 grid = torch.Tensor(2, 1, 224, 448)
                 grid[0] = result[i]
                 grid[1] = gt[i]

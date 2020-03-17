@@ -9,12 +9,13 @@ import matplotlib.pyplot as plt
 import time
 import sys
 
-LEARNING_RATE = 0.001
-EPOCH_NUM = 50
+LEARNING_RATE = 0.00005
+EPOCH_NUM = 1000
 BATCH_SIZE = 6
 NUM_WORKERS = 2
 USE_GPU = True
 USE_PRE_TRAIN = True
+CHECKPONT = 50
 
 if __name__ == '__main__':
 
@@ -28,6 +29,9 @@ if __name__ == '__main__':
 
     optimizer = optim.Adam(net.parameters(), lr=LEARNING_RATE)
     criterion = nn.CrossEntropyLoss()
+    lr_scheduler = torch.optim.lr_scheduler.StepLR(optimizer,
+                                                   step_size=5,
+                                                   gamma=0.5)
 
     transformed_data = data_loader.CityScape(rand=0.1)
     dataloaders = DataLoader(transformed_data, batch_size=BATCH_SIZE,
@@ -53,19 +57,23 @@ if __name__ == '__main__':
             load_data_time = time.time()
 
             # zero the gradient
+            forward_start_time = time.time()
             optimizer.zero_grad()
             outputs = net(inputs)
+            forward_end_time = time.time()
 
             if USE_GPU:
                 labels = batches['label'].cuda()
             else:
                 labels = batches['label']
 
+            backward_start_time = time.time()
             loss = criterion(outputs, labels)
             loss.backward()
+            backward_end_time = time.time()
 
             optimizer.step()
-            train_time = time.time()
+            # lr_scheduler.step()
 
             # get the loss of each epoch
             running_loss += loss.item() * labels.size(0)
@@ -85,7 +93,17 @@ if __name__ == '__main__':
             time.time()-epoch_start_time))
         print('load data time: {:.4f} s'.format(
             load_data_time-batch_start_time))
-        print('train time: {:.4f} s'.format(train_time-load_data_time))
+        print('forward pass time: {:.4f} s'.format(
+            forward_end_time-forward_start_time))
+        print('backward pass time: {:.4f} s'.format(
+            backward_end_time-backward_start_time))
+        if (i+1) % CHECKPONT == 0:
+            print("\a")
+            print('\nDo you want to keep training???\n')
+            decision = input('q:quit, else:yes\n')
+            if decision == 'q':
+                break
+
     end_time = time.time()
 
     plt.ioff()
