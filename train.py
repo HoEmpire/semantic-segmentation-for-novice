@@ -9,20 +9,20 @@ import matplotlib.pyplot as plt
 import time
 import sys
 
-LEARNING_RATE = 0.00005
+LEARNING_RATE = 0.00001
 EPOCH_NUM = 1000
 BATCH_SIZE = 6
 NUM_WORKERS = 2
 USE_GPU = True
 USE_PRE_TRAIN = True
-CHECKPONT = 50
+CHECKPONT = 30
 
 if __name__ == '__main__':
 
     if USE_PRE_TRAIN:
         net = torch.load('model.pkl')
     else:
-        net = model.FCN(35)  # 35 classes for Cityscape Dataset
+        net = model.FCN(34)  # 34 classes for Cityscape Dataset
 
     if USE_GPU:
         net = net.cuda()
@@ -36,6 +36,9 @@ if __name__ == '__main__':
     transformed_data = data_loader.CityScape(rand=0.1)
     dataloaders = DataLoader(transformed_data, batch_size=BATCH_SIZE,
                              shuffle=True, num_workers=NUM_WORKERS)
+    # evaluation_data = data_loader.CityScape(train=False)
+    # dataloaders_eval = DataLoader(evaluation_data, batch_size=BATCH_SIZE,
+    #                               shuffle=True, num_workers=NUM_WORKERS)
 
     loss_plt = []
     epoch_plt = []

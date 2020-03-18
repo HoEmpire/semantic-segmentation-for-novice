@@ -14,10 +14,10 @@ USE_GPU = True
 
 if __name__ == '__main__':
 
-    transformed_data = data_loader.CityScape(train=False, rand=0.1)
+    transformed_data = data_loader.CityScape(train=False, rand=1)
 
     dataloaders = DataLoader(transformed_data, batch_size=BATCH_SIZE,
-                             shuffle=True, num_workers=NUM_WORKERS)
+                             shuffle=False, num_workers=NUM_WORKERS)
 
     model = torch.load('model.pkl')
     evaluator_val = evaluation.Evaluation(35)
