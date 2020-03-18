@@ -11,7 +11,7 @@ import sys
 import evaluation
 import copy
 
-LEARNING_RATE = 0.00002
+LEARNING_RATE = 0.00005
 EPOCH_NUM = 1000
 BATCH_SIZE = 6
 NUM_WORKERS = 2
@@ -38,7 +38,7 @@ if __name__ == '__main__':
                              shuffle=True, num_workers=NUM_WORKERS)
     evaluation_data = data_loader.CityScape(train=False, rand=-1)
     dataloaders_eval = DataLoader(evaluation_data, batch_size=BATCH_SIZE,
-                                  shuffle=True, num_workers=NUM_WORKERS)
+                                  shuffle=False, num_workers=NUM_WORKERS)
 
     loss_plt = []
     epoch_plt = []
@@ -86,7 +86,7 @@ if __name__ == '__main__':
 
         # evaluation
         with torch.no_grad():
-            for batches in dataloaders:
+            for batches in dataloaders_eval:
 
                 if USE_GPU:
                     inputs_eval = batches['image'].cuda()
@@ -99,7 +99,7 @@ if __name__ == '__main__':
                 loss_eval = criterion(outputs_eval, labels_eval)
                 running_loss_eval += loss_eval.item() * labels_eval.size(0)
 
-                _, preds_eval = torch.max(outputs, 1)
+                _, preds_eval = torch.max(outputs_eval, 1)
                 for g, r in zip(labels_eval.cpu(), preds_eval.cpu()):
                     evaluator.record_result(g.numpy(), r.numpy())
         evaluator.get_eval_result()

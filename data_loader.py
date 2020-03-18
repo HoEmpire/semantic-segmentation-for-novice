@@ -124,7 +124,7 @@ class CityScape(object):
                                            RandomCrop((224, 448)),
                                            ToTensor()])
         else:
-            composed = transforms.Compose([Rescale((256, 512)),
+            composed = transforms.Compose([Rescale((224, 448)),
                                            ToTensor()])
         self.data = []
         sample = {}
