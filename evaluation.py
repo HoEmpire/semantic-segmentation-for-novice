@@ -18,7 +18,7 @@ class Evaluation(object):
                            'fence', 'guard rail', 'bridge', 'tunnel', 'pole', 'polegroup',
                            'traffic light', 'traffic sign', 'vegetation', 'terrain', 'sky',
                            'person', 'rider', 'car', 'truck', 'bus', 'caravan', 'trailer',
-                           'train', 'motorcycle', 'bicycle', 'license plate']
+                           'train', 'motorcycle', 'bicycle']
         np.seterr(divide='ignore', invalid='ignore')
         self.n_class = n_class
         self.hist = np.zeros((n_class, n_class))

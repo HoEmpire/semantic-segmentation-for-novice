@@ -8,14 +8,16 @@ import torch
 import matplotlib.pyplot as plt
 import time
 import sys
+import evaluation
+import copy
 
-LEARNING_RATE = 0.00001
+LEARNING_RATE = 0.00002
 EPOCH_NUM = 1000
 BATCH_SIZE = 6
 NUM_WORKERS = 2
 USE_GPU = True
 USE_PRE_TRAIN = True
-CHECKPONT = 30
+CHECKPONT = 10
 
 if __name__ == '__main__':
 
@@ -29,24 +31,25 @@ if __name__ == '__main__':
 
     optimizer = optim.Adam(net.parameters(), lr=LEARNING_RATE)
     criterion = nn.CrossEntropyLoss()
-    lr_scheduler = torch.optim.lr_scheduler.StepLR(optimizer,
-                                                   step_size=5,
-                                                   gamma=0.5)
+    evaluator = evaluation.Evaluation(34)
 
-    transformed_data = data_loader.CityScape(rand=0.1)
+    transformed_data = data_loader.CityScape(rand=0.5)
     dataloaders = DataLoader(transformed_data, batch_size=BATCH_SIZE,
                              shuffle=True, num_workers=NUM_WORKERS)
-    # evaluation_data = data_loader.CityScape(train=False)
-    # dataloaders_eval = DataLoader(evaluation_data, batch_size=BATCH_SIZE,
-    #                               shuffle=True, num_workers=NUM_WORKERS)
+    evaluation_data = data_loader.CityScape(train=False, rand=-1)
+    dataloaders_eval = DataLoader(evaluation_data, batch_size=BATCH_SIZE,
+                                  shuffle=True, num_workers=NUM_WORKERS)
 
     loss_plt = []
     epoch_plt = []
+    loss_eval_plt = []
     plt.ion()
     start_time = time.time()
     for i in range(EPOCH_NUM):
         # forward pass
         running_loss = 0.0
+        running_loss_eval = 0.0
+        evaluator.clear_record()
         epoch_start_time = time.time()
         # iterate the data
         for batches in dataloaders:
@@ -81,14 +84,37 @@ if __name__ == '__main__':
             # get the loss of each epoch
             running_loss += loss.item() * labels.size(0)
 
+        # evaluation
+        with torch.no_grad():
+            for batches in dataloaders:
+
+                if USE_GPU:
+                    inputs_eval = batches['image'].cuda()
+                    labels_eval = batches['label'].cuda()
+                else:
+                    inputs_eval = batches['image']
+                    labels_eval = batches['label']
+
+                outputs_eval = net(inputs_eval)
+                loss_eval = criterion(outputs_eval, labels_eval)
+                running_loss_eval += loss_eval.item() * labels_eval.size(0)
+
+                _, preds_eval = torch.max(outputs, 1)
+                for g, r in zip(labels_eval.cpu(), preds_eval.cpu()):
+                    evaluator.record_result(g.numpy(), r.numpy())
+        evaluator.get_eval_result()
+
         # visualize the process
         loss_plt.append(running_loss/len(transformed_data))
         epoch_plt.append(i + 1)
+        loss_eval_plt.append(running_loss_eval/len(evaluation_data))
         if i+1 > 1:
             plt.cla()
-            plt.plot(epoch_plt, loss_plt, 'r-', lw=5)
-            plt.text((i+1)/2, loss_plt[0], 'Loss=%.4f' % loss_plt[-1],
-                     fontdict={'size': 20, 'color': 'red'})
+            plt.plot(epoch_plt, loss_plt, 'r-', lw=5, label='train')
+            plt.plot(epoch_plt, loss_eval_plt, 'b-', lw=5, label='val')
+            plt.legend(loc=0, ncol=2)
+            plt.title('Loss=%.4f' % loss_plt[-1],
+                      fontdict={'size': 20, 'color': 'red'})
             plt.pause(0.1)
         print('***** epoch {:d} *****'.format(i+1))
         print('Loss: {:.4f}'.format(loss_plt[-1]))
@@ -100,6 +126,11 @@ if __name__ == '__main__':
             forward_end_time-forward_start_time))
         print('backward pass time: {:.4f} s'.format(
             backward_end_time-backward_start_time))
+        print('\n*****overall evaluation result*****')
+        print('mean_accuracy:{:.4f}, mean_iou:{:.4f}, frquency_weighted_iou:{:.4f}'.format(
+            evaluator.mean_acc, evaluator.mean_iou, evaluator.fwiou))
+        print('*****end of epoch {:d}*****\n'.format(i+1))
+
         if (i+1) % CHECKPONT == 0:
             print("\a")
             print('\nDo you want to keep training???\n')
