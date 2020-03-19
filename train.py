@@ -9,15 +9,18 @@ import matplotlib.pyplot as plt
 import time
 import sys
 import evaluation
-import copy
 
 LEARNING_RATE = 0.00002
+WEIGHT_DECAY = 0.001
 EPOCH_NUM = 1000
 BATCH_SIZE = 6
 NUM_WORKERS = 2
 USE_GPU = True
 USE_PRE_TRAIN = True
-CHECKPONT = 1
+PROPOTION_OF_DATA = 0.5
+CHECKPONT = 1  # when the number of epoch can be divided by checkpoint, 
+               # the training will stop, and you can choose whether
+               # to keep on training               
 
 if __name__ == '__main__':
 
@@ -30,14 +33,14 @@ if __name__ == '__main__':
         net = net.cuda()
 
     optimizer = optim.Adam(
-        net.parameters(), lr=LEARNING_RATE, weight_decay=0.001)
+        net.parameters(), lr=LEARNING_RATE, weight_decay=WEIGHT_DECAY)
     criterion = nn.CrossEntropyLoss()
     evaluator = evaluation.Evaluation(34)
 
-    transformed_data = data_loader.CityScape(rand=0.5)
+    transformed_data = data_loader.CityScape(rand=PROPOTION_OF_DATA)
     dataloaders = DataLoader(transformed_data, batch_size=BATCH_SIZE,
                              shuffle=True, num_workers=NUM_WORKERS)
-    evaluation_data = data_loader.CityScape(train=False, rand=-1)
+    evaluation_data = data_loader.CityScape(train=False)
     dataloaders_eval = DataLoader(evaluation_data, batch_size=BATCH_SIZE,
                                   shuffle=False, num_workers=NUM_WORKERS)
 
