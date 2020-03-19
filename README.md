@@ -42,7 +42,7 @@
 - Just run ```validation.py```
 
 ### step4: test the model on image from other dataset
-- Just run ```test.py```
+- Then run ```test.py```
 - Two examples from **RobotCar Dataset** are provided in ```./test```
 
 ## Reference
