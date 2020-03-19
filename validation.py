@@ -19,13 +19,12 @@ if __name__ == '__main__':
     dataloaders = DataLoader(transformed_data, batch_size=BATCH_SIZE,
                              shuffle=False, num_workers=NUM_WORKERS)
 
-    model = torch.load('model.pkl')
+    model = torch.load('./bak/model.pkl')
     evaluator_val = evaluation.Evaluation(34)
     images_so_far = 0
+    model.eval()
     with torch.no_grad():
-
         for batches in dataloaders:
-
             if USE_GPU:
                 inputs = batches['image'].cuda()
                 labels = batches['label']

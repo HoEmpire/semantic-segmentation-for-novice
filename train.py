@@ -11,25 +11,26 @@ import sys
 import evaluation
 import copy
 
-LEARNING_RATE = 0.00005
+LEARNING_RATE = 0.00002
 EPOCH_NUM = 1000
 BATCH_SIZE = 6
 NUM_WORKERS = 2
 USE_GPU = True
 USE_PRE_TRAIN = True
-CHECKPONT = 10
+CHECKPONT = 1
 
 if __name__ == '__main__':
 
     if USE_PRE_TRAIN:
-        net = torch.load('model.pkl')
+        net = torch.load('./bak/model.pkl')
     else:
         net = model.FCN(34)  # 34 classes for Cityscape Dataset
 
     if USE_GPU:
         net = net.cuda()
 
-    optimizer = optim.Adam(net.parameters(), lr=LEARNING_RATE)
+    optimizer = optim.Adam(
+        net.parameters(), lr=LEARNING_RATE, weight_decay=0.001)
     criterion = nn.CrossEntropyLoss()
     evaluator = evaluation.Evaluation(34)
 
@@ -47,6 +48,7 @@ if __name__ == '__main__':
     start_time = time.time()
     for i in range(EPOCH_NUM):
         # forward pass
+        net.train()
         running_loss = 0.0
         running_loss_eval = 0.0
         evaluator.clear_record()
@@ -85,6 +87,7 @@ if __name__ == '__main__':
             running_loss += loss.item() * labels.size(0)
 
         # evaluation
+        net.eval()
         with torch.no_grad():
             for batches in dataloaders_eval:
 
@@ -142,5 +145,5 @@ if __name__ == '__main__':
 
     plt.ioff()
     plt.show()
-    torch.save(net, 'model.pkl')
+    torch.save(net, './bak/model.pkl')
     print('Training time: {:.4f}'.format(end_time-start_time))

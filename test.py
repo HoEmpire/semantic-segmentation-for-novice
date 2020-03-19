@@ -5,11 +5,12 @@ import matplotlib.pyplot as plt
 
 if __name__ == '__main__':
 
-    img = Image.open('./test/night.jpg')
+    img = Image.open('./test/reference4.jpg')
+
     T = transforms.Compose(
-        [transforms.Resize(224), transforms.ToTensor()])
+        [transforms.Resize(256), transforms.ToTensor()])
     input = T(img).unsqueeze(0).cuda()
-    model = torch.load('model.pkl')
+    model = torch.load('./bak/model.pkl')
 
     outputs = model(input)
     _, preds = torch.max(outputs, 1)
